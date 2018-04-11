@@ -17,6 +17,8 @@ RUN echo http://nl.alpinelinux.org/alpine/v3.6/main > /etc/apk/repositories; \
 
 RUN apk update && apk add zeromq-dev libsodium-dev pkgconfig build-base
 COPY . .
+RUN apk add --update git glide
+RUN glide install
 RUN make cmd/export-distro/export-distro
 
 FROM alpine:3.7
