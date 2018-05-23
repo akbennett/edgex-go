@@ -10,24 +10,42 @@
  * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
- *
- * @microservice: core-data-go library
- * @author: Ryan Comer, Dell
- * @version: 0.5.0
  *******************************************************************************/
 package data
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/url"
 	"strconv"
 	"time"
 
+	"github.com/edgexfoundry/edgex-go/core/clients/types"
 	"github.com/edgexfoundry/edgex-go/core/data/clients"
 	"github.com/edgexfoundry/edgex-go/core/domain/models"
 	"github.com/gorilla/mux"
 )
+
+// Check metadata if the device exists
+func checkDevice(device string, w http.ResponseWriter) bool {
+	if configuration.MetaDataCheck {
+		_, err := mdc.CheckForDevice(device)
+		if err != nil {
+			loggingClient.Error(fmt.Sprintf("error checking device %s %v", device, err))
+			switch err := err.(type) {
+			case types.ErrNotFound:
+				http.Error(w, err.Error(), http.StatusNotFound)
+				return false
+			default: //return an error on everything else.
+				http.Error(w, err.Error(), http.StatusServiceUnavailable)
+				return false
+			}
+		}
+	}
+
+	return true
+}
 
 // Put event on the message queue to be processed by the rules engine
 func putEventOnQueue(e models.Event) {
@@ -47,44 +65,20 @@ func updateDeviceLastReportedConnected(device string) {
 		return
 	}
 
-	t := time.Now().UnixNano() / int64(time.Millisecond)
-
-	// Get the device by name
-	d, err := mdc.DeviceForName(device)
+	d, err := mdc.CheckForDevice(device)
 	if err != nil {
 		loggingClient.Error("Error getting device " + device + ": " + err.Error())
 		return
 	}
 
-	// Couldn't find by name
-	if &d == nil {
-		// Get the device by ID
-		d, err = mdc.Device(device)
-		if err != nil {
-			loggingClient.Error("Error getting device " + device + ": " + err.Error())
-			return
-		}
-
-		// Couldn't find device
-		if &d == nil {
-			loggingClient.Error("Error updating device connected/reported times.  Unknown device with identifier of:  " + device)
-			return
-		}
-
-		// Got device by ID, now update lastReported/Connected by ID
-		err = mdc.UpdateLastConnected(d.Id.Hex(), t)
-		if err != nil {
-			loggingClient.Error("Problems updating last connected value for device: " + d.Id.Hex())
-			return
-		}
-		err = mdc.UpdateLastReported(d.Id.Hex(), t)
-		if err != nil {
-			loggingClient.Error("Problems updating last reported value for device: " + d.Id.Hex())
-		}
+	// Couldn't find device
+	if len(d.Name) == 0 {
+		loggingClient.Error("Error updating device connected/reported times.  Unknown device with identifier of:  " + device)
 		return
 	}
 
-	// Found by name, now update lastReported
+	t := time.Now().UnixNano() / int64(time.Millisecond)
+	// Found device, now update lastReported
 	err = mdc.UpdateLastConnectedByName(d.Name, t)
 	if err != nil {
 		loggingClient.Error("Problems updating last connected value for device: " + d.Name)
@@ -107,30 +101,22 @@ func updateDeviceServiceLastReportedConnected(device string) {
 	t := time.Now().UnixNano() / int64(time.Millisecond)
 
 	// Get the device
-	d, err := mdc.DeviceForName(device)
+	d, err := mdc.CheckForDevice(device)
 	if err != nil {
 		loggingClient.Error("Error getting device " + device + ": " + err.Error())
 		return
 	}
 
-	// Couldn't find by name
-	if &d == nil {
-		d, err = mdc.Device(device)
-		if err != nil {
-			loggingClient.Error("Error getting device " + device + ": " + err.Error())
-			return
-		}
-		// Couldn't find device
-		if &d == nil {
-			loggingClient.Error("Error updating device connected/reported times.  Unknown device with identifier of:  " + device)
-			return
-		}
+	// Couldn't find device
+	if len(d.Name) == 0 {
+		loggingClient.Error("Error updating device connected/reported times.  Unknown device with identifier of:  " + device)
+		return
 	}
 
 	// Get the device service
 	s := d.Service
 	if &s == nil {
-		loggingClient.Error("Error updating device service connected/reported times.  Unknown device service in device:  " + d.Id.Hex())
+		loggingClient.Error("Error updating device service connected/reported times.  Unknown device service in device:  " + d.Name)
 		return
 	}
 
@@ -218,45 +204,16 @@ func eventHandler(w http.ResponseWriter, r *http.Request) {
 
 		loggingClient.Info("Posting Event: " + e.String())
 
-		// Get device from metadata
-		deviceFound := true
-		// Try by ID
-		d, err := mdc.Device(e.Device)
-		if err != nil {
-			// Try by name
-			d, err = mdc.DeviceForName(e.Device)
-			if err != nil {
-				deviceFound = false
-			}
-		}
-		// Make sure the identifier is the device name
-		if deviceFound {
-			e.Device = d.Name
-		}
-
-		// See if metadata checking is enabled
-		if configuration.MetaDataCheck && !deviceFound {
-			loggingClient.Error("Device not found for event: "+err.Error(), "")
-			http.Error(w, err.Error(), http.StatusNotFound)
+		// Check device
+		if checkDevice(e.Device, w) == false {
 			return
 		}
 
 		if configuration.ValidateCheck {
 			loggingClient.Debug("Validation enabled, parsing events")
 			for reading := range e.Readings {
-				valid, err := isValidValueDescriptor(e.Readings[reading], e)
-				if !valid {
-					loggingClient.Error("Validation failed: %s", err.Error())
-					return
-				}
-			}
-		}
-
-		// Add the readings to the database
-		if configuration.PersistData {
-			for i, reading := range e.Readings {
 				// Check value descriptor
-				_, err := dbc.ValueDescriptorByName(reading.Name)
+				vd, err := dbc.ValueDescriptorByName(e.Readings[reading].Name)
 				if err != nil {
 					if err == clients.ErrNotFound {
 						http.Error(w, "Value descriptor for a reading not found", http.StatusNotFound)
@@ -267,6 +224,18 @@ func eventHandler(w http.ResponseWriter, r *http.Request) {
 					return
 				}
 
+				valid, err := isValidValueDescriptor(vd, e.Readings[reading])
+				if !valid {
+					http.Error(w, "Validation failed", http.StatusConflict)
+					loggingClient.Error("Validation failed")
+					return
+				}
+			}
+		}
+
+		// Add the readings to the database
+		if configuration.PersistData {
+			for i, reading := range e.Readings {
 				reading.Device = e.Device // Update the device for the reading
 
 				// Add the reading
@@ -327,28 +296,14 @@ func eventHandler(w http.ResponseWriter, r *http.Request) {
 		loggingClient.Info("Updating event: " + from.ID.Hex())
 
 		// Update the fields
-		if from.Device != "" {
-			deviceFound := true
-			d, err := mdc.Device(from.Device)
-			if err != nil {
-				d, err = mdc.DeviceForName(from.Device)
-				if err != nil {
-					deviceFound = false
-				}
-			}
-
-			// See if we need to check metadata
-			if configuration.MetaDataCheck && !deviceFound {
-				http.Error(w, "Error updating event: Device "+from.Device+" doesn't exist", http.StatusNotFound)
-				loggingClient.Error("Error updating device, device " + from.Device + " doesn't exist")
+		if len(from.Device) > 0 {
+			// Check device
+			if checkDevice(from.Device, w) == false {
 				return
 			}
 
-			if deviceFound {
-				to.Device = d.Name
-			} else {
-				to.Device = from.Device
-			}
+			// Set the device name on the event
+			to.Device = from.Device
 		}
 		if from.Pushed != 0 {
 			to.Pushed = from.Pushed
@@ -366,7 +321,6 @@ func eventHandler(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("true"))
-		//encode(true, w)
 	}
 }
 
@@ -445,20 +399,12 @@ func eventCountByDeviceIdHandler(w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
 	case http.MethodGet:
-		// Get the device
-		// Try by ID
-		d, err := mdc.Device(id)
-		if err != nil {
-			// Try by Name
-			d, err = mdc.DeviceForName(id)
-			if err != nil {
-				loggingClient.Error("Device not found for event: "+err.Error(), "")
-				http.Error(w, err.Error(), http.StatusNotFound)
-				return
-			}
+		// Check device
+		if checkDevice(id, w) == false {
+			return
 		}
 
-		count, err := dbc.EventCountByDeviceId(d.Name)
+		count, err := dbc.EventCountByDeviceId(id)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusServiceUnavailable)
 			loggingClient.Error(err.Error())
@@ -511,7 +457,6 @@ func eventIdHandler(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("true"))
-		//encode(true, w)
 		break
 	// Delete the event and all of it's readings
 	case http.MethodDelete:
@@ -537,7 +482,6 @@ func eventIdHandler(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("true"))
-		//encode(true, w)
 	}
 }
 
@@ -568,26 +512,8 @@ func getEventByDeviceHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Get the device
-	deviceFound := true
-	// Try by ID
-	d, err := mdc.Device(deviceId)
-	if err != nil {
-		// Try by Name
-		d, err = mdc.DeviceForName(deviceId)
-		if err != nil {
-			deviceFound = false
-		}
-	}
-
-	if deviceFound {
-		deviceId = d.Name
-	}
-
-	// See if you need to check metadata for the device
-	if configuration.MetaDataCheck && !deviceFound {
-		http.Error(w, "Error getting events for a device: The device '"+deviceId+"' doesn't exist", http.StatusNotFound)
-		loggingClient.Error("Error getting readings for a device: The device doesn't exist")
+	// Check device
+	if checkDevice(deviceId, w) == false {
 		return
 	}
 
@@ -626,24 +552,8 @@ func deleteByDeviceIdHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Get the device
-	deviceFound := true
-	d, err := mdc.Device(deviceId)
-	if err != nil {
-		d, err = mdc.DeviceForName(deviceId)
-		if err != nil {
-			deviceFound = false
-		}
-	}
-
-	if deviceFound {
-		deviceId = d.Name
-	}
-
-	// See if you need to check metadata
-	if configuration.MetaDataCheck && !deviceFound {
-		loggingClient.Error("Device not found for event: "+err.Error(), "")
-		http.Error(w, err.Error(), http.StatusNotFound)
+	// Check device
+	if checkDevice(deviceId, w) == false {
 		return
 	}
 
@@ -768,26 +678,8 @@ func readingByDeviceFilteredValueDescriptor(w http.ResponseWriter, r *http.Reque
 			return
 		}
 
-		// Get the device
-		deviceFound := true
-		// Try by id
-		d, err := mdc.Device(deviceId)
-		if err != nil {
-			// Try by name
-			d, err = mdc.DeviceForName(deviceId)
-			if err != nil {
-				deviceFound = false
-			}
-		}
-
-		if deviceFound {
-			deviceId = d.Name
-		}
-
-		// See if you need to check metadata
-		if configuration.MetaDataCheck && !deviceFound {
-			loggingClient.Error("Device not found for event: "+err.Error(), "")
-			http.Error(w, err.Error(), http.StatusNotFound)
+		// Check device
+		if checkDevice(deviceId, w) == false {
 			return
 		}
 

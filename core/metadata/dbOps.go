@@ -10,10 +10,6 @@
  * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
- *
- * @microservice: core-metadata-go service
- * @author: Spencer Bull & Ryan Comer, Dell
- * @version: 0.5.0
  *******************************************************************************/
 package metadata
 
@@ -305,12 +301,6 @@ func deleteDeviceProfileByName(n string) error {
 	return nil
 }
 
-//func getDeviceProfilesByCommandName(d *[]models.DeviceProfile, cn string) error {
-//	if DATABASE == enums.MONGODB {
-//		return mgoGetDeviceProfilesByCommandName(d, cn)
-//	}
-//	return nil
-//}
 func getDeviceProfilesByModel(dp *[]models.DeviceProfile, m string) error {
 	if DATABASE == enums.MONGODB {
 		return mgoGetDeviceProfilesByModel(dp, m)

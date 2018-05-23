@@ -10,9 +10,6 @@
  * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
- *
- * @author: Trevor Conn, Dell
- * @version: 0.5.0
  *******************************************************************************/
 package clients
 
@@ -25,8 +22,8 @@ import (
 
 type MockParams struct {
 	EventId bson.ObjectId
-	Device string
-	Origin int64
+	Device  string
+	Origin  int64
 }
 
 var mockParams *MockParams
@@ -34,14 +31,17 @@ var mockParams *MockParams
 func NewMockParams() *MockParams {
 	if mockParams == nil {
 		mockParams = &MockParams{
-			EventId:bson.NewObjectId(),
-			Device:"test device",
-			Origin:123456789}
+			EventId: bson.NewObjectId(),
+			Device:  "test device",
+			Origin:  123456789}
 	}
 	return mockParams
 }
 
 type MockDb struct {
+}
+
+func (mc *MockDb) CloseSession () {
 
 }
 
@@ -54,14 +54,14 @@ func (mc *MockDb) Events() ([]models.Event, error) {
 	ticks := time.Now().Unix()
 	events := []models.Event{}
 
-	evt1 := models.Event{ID:mockParams.EventId, Pushed:1, Device:mockParams.Device, Created:ticks, Modified:ticks,
-		Origin:mockParams.Origin, Schedule:"TestScheduleA", Event:"SampleEvent", Readings:[]models.Reading{}}
+	evt1 := models.Event{ID: mockParams.EventId, Pushed: 1, Device: mockParams.Device, Created: ticks, Modified: ticks,
+		Origin: mockParams.Origin, Schedule: "TestScheduleA", Event: "SampleEvent", Readings: []models.Reading{}}
 
 	events = append(events, evt1)
 	return events, nil
 }
 
-func (mc *MockDb) AddEvent(e *models.Event) (bson.ObjectId, error){
+func (mc *MockDb) AddEvent(e *models.Event) (bson.ObjectId, error) {
 	return bson.NewObjectId(), nil
 }
 
@@ -69,12 +69,12 @@ func (mc *MockDb) UpdateEvent(e models.Event) error {
 	return nil
 }
 
-func (mc *MockDb) EventById(id string) (models.Event, error){
+func (mc *MockDb) EventById(id string) (models.Event, error) {
 	ticks := time.Now().Unix()
 
 	if id == mockParams.EventId.Hex() {
-		return models.Event{ID:mockParams.EventId, Pushed:1, Device:mockParams.Device, Created:ticks, Modified:ticks,
-			Origin:mockParams.Origin, Schedule:"TestScheduleA", Event:"SampleEvent", Readings:[]models.Reading{}}, nil
+		return models.Event{ID: mockParams.EventId, Pushed: 1, Device: mockParams.Device, Created: ticks, Modified: ticks,
+			Origin: mockParams.Origin, Schedule: "TestScheduleA", Event: "SampleEvent", Readings: []models.Reading{}}, nil
 	}
 	return models.Event{}, nil
 }
@@ -95,7 +95,7 @@ func (mc *MockDb) EventsForDeviceLimit(id string, limit int) ([]models.Event, er
 	return []models.Event{}, nil
 }
 
-func (mc *MockDb) EventsForDevice(id string) ([]models.Event, error){
+func (mc *MockDb) EventsForDevice(id string) ([]models.Event, error) {
 	return []models.Event{}, nil
 }
 
@@ -182,7 +182,6 @@ func (mc *MockDb) ValueDescriptorsByName(names []string) ([]models.ValueDescript
 func (mc *MockDb) ValueDescriptorById(id string) (models.ValueDescriptor, error) {
 	return models.ValueDescriptor{}, nil
 }
-
 
 func (mc *MockDb) ValueDescriptorsByUomLabel(uomLabel string) ([]models.ValueDescriptor, error) {
 	return []models.ValueDescriptor{}, nil

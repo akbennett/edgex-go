@@ -10,10 +10,6 @@
  * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
- *
- * @microservice: core-metadata-go service
- * @author: Spencer Bull & Ryan Comer, Dell
- * @version: 0.5.0
  *******************************************************************************/
 package metadata
 
@@ -23,7 +19,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func LoadRestRoutes() http.Handler {
+func LoadRestRoutes() *mux.Router {
 	r := mux.NewRouter()
 	b := r.PathPrefix("/api/v1").Subrouter()
 	b.HandleFunc("/ping", ping)
@@ -64,6 +60,7 @@ func loadDeviceRoutes(b *mux.Router) {
 	d.HandleFunc("/{"+ID+"}/"+URLLASTREPORTED+"/{"+LASTREPORTED+"}/{"+LASTREPORTEDNOTIFY+"}", restSetDeviceLastReportedByIdNotify).Methods(http.MethodPut)
 	d.HandleFunc("/{"+ID+"}/"+URLLASTCONNECTED+"/{"+LASTCONNECTED+"}", restSetDeviceLastConnectedById).Methods(http.MethodPut)
 	d.HandleFunc("/{"+ID+"}/"+URLLASTCONNECTED+"/{"+LASTCONNECTED+"}/{"+LASTCONNECTEDNOTIFY+"}", restSetLastConnectedByIdNotify).Methods(http.MethodPut)
+	d.HandleFunc("/"+CHECK+"/{"+ID+"}", restCheckForDevice).Methods(http.MethodGet)
 
 	// /api/v1/" + DEVICE/" + NAME + "
 	n := d.PathPrefix("/" + NAME).Subrouter()

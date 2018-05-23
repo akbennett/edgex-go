@@ -7,6 +7,8 @@
 package export
 
 import (
+	"fmt"
+
 	"github.com/edgexfoundry/edgex-go/core/domain/models"
 
 	"gopkg.in/mgo.v2/bson"
@@ -21,12 +23,13 @@ const (
 
 // Data format types
 const (
-	FormatJSON        = "JSON"
-	FormatXML         = "XML"
-	FormatSerialized  = "SERIALIZED"
-	FormatIoTCoreJSON = "IOTCORE_JSON"
-	FormatAzureJSON   = "AZURE_JSON"
-	FormatCSV         = "CSV"
+	FormatJSON            = "JSON"
+	FormatXML             = "XML"
+	FormatSerialized      = "SERIALIZED"
+	FormatIoTCoreJSON     = "IOTCORE_JSON"
+	FormatAzureJSON       = "AZURE_JSON"
+	FormatCSV             = "CSV"
+	FormatThingsBoardJSON = "THINGSBOARD_JSON"
 )
 
 // Export destination types
@@ -41,7 +44,7 @@ const (
 // Registration - Defines the registration details
 // on the part of north side export clients
 type Registration struct {
-	ID          bson.ObjectId      `bson:"_id,omitempty" json:"_id,omitempty"`
+	ID          bson.ObjectId      `bson:"_id,omitempty" json:"id,omitempty"`
 	Created     int64              `json:"created"`
 	Modified    int64              `json:"modified"`
 	Origin      int64              `json:"origin"`
@@ -66,7 +69,11 @@ type NotifyUpdate struct {
 	Operation string `json:"operation"`
 }
 
-func (reg *Registration) Validate() bool {
+func (reg *Registration) Validate() (bool, error) {
+
+	if reg.Name == "" {
+		return false, fmt.Errorf("Name is required")
+	}
 
 	if reg.Compression == "" {
 		reg.Compression = CompNone
@@ -75,7 +82,7 @@ func (reg *Registration) Validate() bool {
 	if reg.Compression != CompNone &&
 		reg.Compression != CompGzip &&
 		reg.Compression != CompZip {
-		return false
+		return false, fmt.Errorf("Compression invalid: %s", reg.Compression)
 	}
 
 	if reg.Format != FormatJSON &&
@@ -83,8 +90,9 @@ func (reg *Registration) Validate() bool {
 		reg.Format != FormatSerialized &&
 		reg.Format != FormatIoTCoreJSON &&
 		reg.Format != FormatAzureJSON &&
-		reg.Format != FormatCSV {
-		return false
+		reg.Format != FormatCSV &&
+		reg.Format != FormatThingsBoardJSON {
+		return false, fmt.Errorf("Format invalid: %s", reg.Format)
 	}
 
 	if reg.Destination != DestMQTT &&
@@ -92,7 +100,7 @@ func (reg *Registration) Validate() bool {
 		reg.Destination != DestIotCoreMQTT &&
 		reg.Destination != DestAzureMQTT &&
 		reg.Destination != DestRest {
-		return false
+		return false, fmt.Errorf("Destination invalid: %s", reg.Destination)
 	}
 
 	if reg.Encryption.Algo == "" {
@@ -101,8 +109,8 @@ func (reg *Registration) Validate() bool {
 
 	if reg.Encryption.Algo != EncNone &&
 		reg.Encryption.Algo != EncAes {
-		return false
+		return false, fmt.Errorf("Encryption invalid: %s", reg.Encryption.Algo)
 	}
 
-	return true
+	return true, nil
 }

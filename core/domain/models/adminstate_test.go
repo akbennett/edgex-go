@@ -10,10 +10,6 @@
  * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
- *
- * @microservice: core-domain-go library
- * @author: Jim White, Dell
- * @version: 0.5.0
  *******************************************************************************/
 
 package models
@@ -35,9 +31,9 @@ func TestAdminState_UnmarshalJSON(t *testing.T) {
 		wantErr bool
 	}{
 		{"LOCKED marshal", &locked, args{[]byte("\"LOCKED\"")}, false},
-		{"locked marshal", &locked, args{[]byte("\"locked\"")}, true},
+		{"locked marshal", &locked, args{[]byte("\"locked\"")}, false},
 		{"Unlocked marshal", &unlocked, args{[]byte("\"UNLOCKED\"")}, false},
-		{"unlocked marshal", &unlocked, args{[]byte("\"unlocked\"")}, true},
+		{"unlocked marshal", &unlocked, args{[]byte("\"unlocked\"")}, false},
 		{"bad marshal", &foo, args{[]byte("\"goo\"")}, true},
 	}
 	for _, tt := range tests {
@@ -67,8 +63,10 @@ func TestIsAdminStateType(t *testing.T) {
 	}{
 		{"LOCKED", args{"LOCKED"}, true},
 		{"UNLOCKED", args{"UNLOCKED"}, true},
-		{"locked", args{"locked"}, false},
-		{"unlocked", args{"unlocked"}, false},
+		{"locked", args{"locked"}, true},
+		{"unlocked", args{"unlocked"}, true},
+		{"Locked", args{"Locked"}, true},
+		{"Unlocked", args{"Unlocked"}, true},
 		{"non valid", args{"junk"}, false},
 	}
 	for _, tt := range tests {

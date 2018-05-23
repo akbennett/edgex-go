@@ -10,10 +10,6 @@
  * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
- *
- * @microservice: core-data-go library
- * @author: Ryan Comer, Dell
- * @version: 0.5.0
  *******************************************************************************/
 package data
 
@@ -24,10 +20,11 @@ import (
 	"net/url"
 	"regexp"
 
-	"github.com/edgexfoundry/edgex-go/core/clients/metadataclients"
+	"github.com/edgexfoundry/edgex-go/core/clients/types"
 	"github.com/edgexfoundry/edgex-go/core/data/clients"
 	"github.com/edgexfoundry/edgex-go/core/domain/models"
 	"github.com/gorilla/mux"
+	"fmt"
 )
 
 const (
@@ -445,12 +442,16 @@ func valueDescriptorByDeviceIdHandler(w http.ResponseWriter, r *http.Request) {
 	// Get the device
 	d, err := mdc.Device(deviceId)
 	if err != nil {
-		if err == metadataclients.ErrNotFound {
-			http.Error(w, "Device not found: "+err.Error(), http.StatusNotFound)
-		} else {
-			http.Error(w, "Problem getting device from metadata: "+err.Error(), http.StatusServiceUnavailable)
+		var msg string
+		switch err := err.(type) {
+		case types.ErrNotFound:
+			msg = fmt.Sprintf("Device not found: %v", err)
+			http.Error(w, msg, http.StatusNotFound)
+		default:
+			msg = fmt.Sprintf("Problem getting device from metadata: %v", err)
+			http.Error(w, msg, http.StatusServiceUnavailable)
 		}
-		loggingClient.Error("Device not found: " + err.Error())
+		loggingClient.Error(msg)
 		return
 	}
 

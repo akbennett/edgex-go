@@ -10,44 +10,47 @@
  * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
- *
- * @microservice: core-command-go service
- * @author: Spencer Bull, Dell
- * @version: 0.5.0
  *******************************************************************************/
 package command
 
 // ConfigurationStruct : Struct used to pase the JSON configuration file
 type ConfigurationStruct struct {
-	ApplicationName           string
-	ConsulProfilesActive      string
-	ReadMaxLimit              int
-	ServicePort               int
-	HeartBeatTime             int
-	ConsulPort                int
-	ServiceTimeout            int
-	CheckInterval             string
-	ServiceAddress            string
-	ServiceName               string
-	DeviceServiceProtocol     string
-	HeartBeatMsg              string
-	AppOpenMsg                string
-	URLProtocol               string
-	URLDevicePath             string
-	ConsulHost                string
-	ConsulCheckAddress        string
-	EnableRemoteLogging       bool
-	LogFile                   string
-	LoggingRemoteURL          string
-	MetaAddressableURL        string
-	MetaDeviceServiceURL      string
-	MetaDeviceProfileURL      string
-	MetaDeviceURL             string
-	MetaDeviceReportURL       string
-	MetaCommandURL            string
-	MetaEventURL              string
-	MetaScheduleURL           string
-	MetaProvisionWatcherURL   string
+	ConsulProfilesActive       string
+	ReadMaxLimit               int
+	ServicePort                int
+	HeartBeatTime              int
+	ConsulPort                 int
+	ServiceTimeout             int
+	CheckInterval              string
+	ServiceAddress             string
+	DeviceServiceProtocol      string
+	HeartBeatMsg               string
+	AppOpenMsg                 string
+	URLProtocol                string
+	URLDevicePath              string
+	ConsulHost                 string
+	ConsulCheckAddress         string
+	EnableRemoteLogging        bool
+	LogFile                    string
+	LoggingRemoteURL           string
+	MetaAddressableURL         string
+	MetaAddressablePath        string
+	MetaDeviceServiceURL       string
+	MetaDeviceServicePath	   string
+	MetaDeviceProfileURL       string
+	MetaDeviceProfilePath	   string
+	MetaDeviceURL              string
+	MetaDevicePath             string
+	MetaDeviceReportURL        string
+	MetaDeviceReportPath       string
+	MetaCommandURL             string
+	MetaCommandPath            string
+	MetaEventURL               string
+	MetaEventPath              string
+	MetaScheduleURL            string
+	MetaSchedulePath           string
+	MetaProvisionWatcherURL    string
+	MetaProvisionWatcherPath   string
 }
 
 // Configuration data for the metadata service
@@ -55,7 +58,6 @@ var configuration ConfigurationStruct = ConfigurationStruct{}
 
 const (
 	/* -------------- Constants for Command -------------------- */
-	COMMANDSERVICENAME       string = "core-command"
 	REST_HTTP                string = "http://"
 	ID                       string = "id"
 	_ID                      string = "_id"

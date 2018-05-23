@@ -10,10 +10,6 @@
  * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
- *
- * @microservice: core-domain-go library
- * @author: Ryan Comer & Spencer Bull, Dell
- * @version: 0.5.0
  *******************************************************************************/
 
 package models
@@ -38,7 +34,7 @@ type Event struct {
 	Modified int64         `bson:"modified" json:"modified"`
 	Origin   int64         `bson:"origin" json:"origin"`
 	Schedule string        `bson:"schedule,omitempty" json:"schedule"` // Schedule identifier
-	Event    string        `bson:"event,omitempty"`                    // Schedule event identifier
+	Event    string        `bson:"event,omitempty" json:"event"`       // Schedule event identifier
 	Readings []Reading     `bson:"readings" json:"readings"`           // List of readings
 }
 

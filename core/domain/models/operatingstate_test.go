@@ -10,10 +10,6 @@
  * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
- *
- * @microservice: core-domain-go library
- * @author: Jim White, Dell
- * @version: 0.5.0
  *******************************************************************************/
 
 package models
@@ -36,9 +32,9 @@ func TestOperatingState_UnmarshalJSON(t *testing.T) {
 		wantErr bool
 	}{
 		{"DISABLED unmarshal", &disabled, args{[]byte("\"DISABLED\"")}, false},
-		{"disabled unmarshal", &disabled, args{[]byte("\"disabled\"")}, true},
+		{"disabled unmarshal", &disabled, args{[]byte("\"disabled\"")}, false},
 		{"ENABLED unmarshal", &enabled, args{[]byte("\"ENABLED\"")}, false},
-		{"enabled unmarshal", &enabled, args{[]byte("\"enabled\"")}, true},
+		{"enabled unmarshal", &enabled, args{[]byte("\"enabled\"")}, false},
 		{"bad unmarshal", &foo, args{[]byte("\"goo\"")}, true},
 	}
 	for _, tt := range tests {
@@ -68,8 +64,10 @@ func TestIsOperatingStateType(t *testing.T) {
 	}{
 		{"DISABLED", args{"DISABLED"}, true},
 		{"ENABLED", args{"ENABLED"}, true},
-		{"disabled", args{"disabled"}, false},
-		{"enabled", args{"enabled"}, false},
+		{"disabled", args{"disabled"}, true},
+		{"enabled", args{"enabled"}, true},
+		{"Disabled", args{"Disabled"}, true},
+		{"Enabled", args{"Enabled"}, true},
 		{"non valid", args{"junk"}, false},
 	}
 	for _, tt := range tests {

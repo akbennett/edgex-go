@@ -10,10 +10,6 @@
  * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
- *
- * @microservice: core-domain-go library
- * @author: Ryan Comer & Spencer Bull, Dell
- * @version: 0.5.0
  *******************************************************************************/
 
 package models
@@ -72,6 +68,27 @@ func (c Command) String() string {
 		return err.Error()
 	}
 	return string(out)
+}
+
+func(c *Command) UnmarshalJSON(b []byte) error {
+	type Alias Command
+	alias := &struct {
+		*Alias
+	} {
+		Alias: (*Alias)(c),
+	}
+
+	if err := json.Unmarshal(b, &alias); err != nil {
+		return err
+	}
+	c = (*Command)(alias.Alias)
+	if c.Get == nil {
+		c.Get = &Get{}
+	}
+	if c.Put == nil {
+		c.Put = &Put{}
+	}
+	return nil
 }
 
 // Append all the associated value descriptors to the list

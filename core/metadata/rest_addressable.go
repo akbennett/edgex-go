@@ -10,10 +10,6 @@
  * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
- *
- * @microservice: core-metadata-go service
- * @author: Spencer Bull & Ryan Comer, Dell
- * @version: 0.5.0
  *******************************************************************************/
 package metadata
 
@@ -58,6 +54,13 @@ func restAddAddressable(w http.ResponseWriter, r *http.Request) {
 		loggingClient.Error(err.Error(), "")
 		http.Error(w, err.Error(), http.StatusServiceUnavailable)
 		return
+	} else {
+		if len(a.Name) == 0 {
+			err = errors.New("name is required for addressable")
+			loggingClient.Error(err.Error(), "")
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
 	}
 
 	err = addAddressable(&a)

@@ -10,10 +10,6 @@
  * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
- *
- * @microservice: core-domain-go library
- * @author: Ryan Comer & Spencer Bull, Dell
- * @version: 0.5.0
  *******************************************************************************/
 
 package models
@@ -21,6 +17,7 @@ package models
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 )
 
 // AdminState : unlocked or locked
@@ -29,12 +26,8 @@ type AdminState string
 const (
 	// Locked : device is locked
 	// Unlocked : device is unlocked
-	// locked : TODO rename all ref to Locked
-	// unlocked : TODO rename all ref to Unlocked
 	Locked   = "LOCKED"
 	Unlocked = "UNLOCKED"
-	locked   = "locked"
-	unlocked = "unlocked"
 )
 
 /*
@@ -47,6 +40,7 @@ func (as *AdminState) UnmarshalJSON(data []byte) error {
 		return fmt.Errorf("AdminState should be a string, got %s", data)
 	}
 
+	s = strings.ToUpper(s)
 	got, err := map[string]AdminState{"LOCKED": Locked, "UNLOCKED": Unlocked}[s]
 	if !err {
 		return fmt.Errorf("invalid AdminState %q", s)
@@ -55,6 +49,7 @@ func (as *AdminState) UnmarshalJSON(data []byte) error {
 	return nil
 }
 func IsAdminStateType(as string) bool {
+	as = strings.ToUpper(as)
 	_, err := map[string]AdminState{"LOCKED": Locked, "UNLOCKED": Unlocked}[as]
 	if !err {
 		return false

@@ -10,19 +10,12 @@
  * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
- *
- * @microservice: core-metadata-go service
- * @original author: Spencer Bull & Ryan Comer, Dell
- * @version: 0.5.0
- * @updated by:  Jim White, Dell Technologies, Feb 27, 2108
- * Added func makeTimestamp and import of time to support it (Fede C. initiated during mono repo work)
  *******************************************************************************/
 package metadata
 
 import (
 	"errors"
 	"reflect"
-	"strings"
 	"time"
 
 	"github.com/edgexfoundry/edgex-go/core/domain/models"
@@ -649,7 +642,7 @@ func mgoUpdateAddressable(ra *models.Addressable, r *models.Addressable) error {
 	if ra.Name != "" {
 		r.Name = ra.Name
 	}
-	if strings.Compare(ra.Protocol, "HTTP") != 0 || strings.Compare(ra.Protocol, "TCP") != 0 { // TODO create ENUMS that can be unmarshalled by JSON
+	if ra.Protocol != "" {
 		r.Protocol = ra.Protocol
 	}
 	if ra.Address != "" {

@@ -45,9 +45,9 @@ func (reg *registrationInfo) update(newReg export.Registration) bool {
 	reg.format = nil
 	switch newReg.Format {
 	case export.FormatJSON:
-		reg.format = jsonFormater{}
+		reg.format = jsonFormatter{}
 	case export.FormatXML:
-		reg.format = xmlFormater{}
+		reg.format = xmlFormatter{}
 	case export.FormatSerialized:
 		// TODO reg.format = distro.NewSerializedFormat()
 	case export.FormatIoTCoreJSON:
@@ -56,6 +56,8 @@ func (reg *registrationInfo) update(newReg export.Registration) bool {
 		// TODO reg.format = distro.NewAzureFormat()
 	case export.FormatCSV:
 		// TODO reg.format = distro.NewCsvFormat()
+	case export.FormatThingsBoardJSON:
+		reg.format = thingsboardJSONFormatter{}
 	default:
 		logger.Warn("Format not supported: ", zap.String("format", newReg.Format))
 		return false
@@ -224,12 +226,9 @@ func updateRunningRegistrations(running map[string]*registrationInfo,
 }
 
 // Loop - registration loop
-func Loop(config Config, errChan chan error, eventCh chan *models.Event) {
-
-	cfg = config
-
+func Loop(errChan chan error, eventCh chan *models.Event) {
 	go func() {
-		p := fmt.Sprintf(":%d", cfg.Port)
+		p := fmt.Sprintf(":%d", configuration.Port)
 		logger.Info("Starting Export Distro", zap.String("url", p))
 		errChan <- http.ListenAndServe(p, httpServer())
 	}()

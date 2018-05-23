@@ -27,7 +27,7 @@ func getRegistrationBaseURL(host string) string {
 }
 
 func getRegistrations() []export.Registration {
-	url := getRegistrationBaseURL(cfg.ClientHost)
+	url := getRegistrationBaseURL(configuration.ClientHost)
 	return getRegistrationsURL(url)
 }
 
@@ -47,15 +47,17 @@ func getRegistrationsURL(url string) []export.Registration {
 
 	results := registrations[:0]
 	for _, reg := range registrations {
-		if reg.Validate() {
+		if valid, err := reg.Validate(); valid {
 			results = append(results, reg)
+		} else {
+			logger.Warn("Could not validate registration", zap.Error(err))
 		}
 	}
 	return results
 }
 
 func getRegistrationByName(name string) *export.Registration {
-	url := getRegistrationBaseURL(cfg.ClientHost) + "/name/" + name
+	url := getRegistrationBaseURL(configuration.ClientHost) + "/name/" + name
 	return getRegistrationByNameURL(url)
 }
 
@@ -74,8 +76,8 @@ func getRegistrationByNameURL(url string) *export.Registration {
 		return nil
 	}
 
-	if !reg.Validate() {
-		logger.Error("Failed to validate registrations fields")
+	if valid, err := reg.Validate(); !valid {
+		logger.Error("Failed to validate registrations fields", zap.Error(err))
 		return nil
 	}
 	return &reg

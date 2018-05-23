@@ -1,3 +1,16 @@
+/*******************************************************************************
+ * Copyright 2018 Dell Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ *******************************************************************************/
 package data
 
 import (
@@ -25,9 +38,8 @@ func TestValidBoolean(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var event = models.Event{}
-			event.Readings = append(event.Readings, models.Reading{Value: tt.value})
-			val, err := validBoolean(event)
+			var reading = models.Reading{Value: tt.value}
+			val, err := validBoolean(reading)
 			if err == nil {
 				if tt.result != val {
 					t.Errorf("expecting %v, returned %v", tt.result, val)
@@ -76,10 +88,9 @@ func TestValidFloat(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var event = models.Event{}
-			event.Readings = append(event.Readings, models.Reading{Value: tt.value})
+			var reading = models.Reading{Value: tt.value}
 			tvd := models.ValueDescriptor{Min: tt.min, Max: tt.max}
-			val, err := validFloat(event, tvd)
+			val, err := validFloat(reading, tvd)
 			if err == nil {
 				if tt.result != val {
 					t.Errorf("expecting %v, returned %v", tt.result, val)
@@ -127,10 +138,9 @@ func TestValidInteger(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var event = models.Event{}
-			event.Readings = append(event.Readings, models.Reading{Value: tt.value})
+			var reading = models.Reading{Value: tt.value}
 			tvd := models.ValueDescriptor{Min: tt.min, Max: tt.max}
-			val, err := validInteger(event, tvd)
+			val, err := validInteger(reading, tvd)
 			if err == nil {
 				if tt.result != val {
 					t.Errorf("expecting %v, returned %v", tt.result, val)
@@ -158,10 +168,8 @@ func TestValidString(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var event = models.Event{}
-
-			event.Readings = append(event.Readings, models.Reading{Value: tt.value})
-			val, err := validString(event)
+			var reading = models.Reading{Value: tt.value}
+			val, err := validString(reading)
 			if err == nil {
 				if tt.result != val {
 					t.Errorf("expecting %v, returned %v", tt.result, val)
@@ -191,9 +199,8 @@ func TestValidJson(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var event = models.Event{}
-			event.Readings = append(event.Readings, models.Reading{Value: tt.value})
-			val, err := validJSON(event)
+			var reading = models.Reading{Value: tt.value}
+			val, err := validJSON(reading)
 			if err == nil {
 				if tt.result != val {
 					t.Errorf("expecting %v, returned %v", tt.result, val)
@@ -211,41 +218,42 @@ func TestValidJson(t *testing.T) {
 func TestIsValidValueDescriptor_private(t *testing.T) {
 
 	var tests = []struct {
+		tvd   string
 		value string
 		err   bool
 	}{
-		{"", true},
-		{"B", false},
-		{"b", true},
-		{"P", true},
+		{"", "", true},
+		{"B", "true", false},
+		{"b", "", true},
+		{"P", "", true},
 
-		{"F", false},
-		{"f", true},
-		{"P", true},
+		{"F", "-10.5", false},
+		{"f", "", true},
+		{"P", "", true},
 
-		{"I", false},
-		{"i", true},
-		{"P", true},
+		{"I", "-23", false},
+		{"i", "", true},
+		{"P", "", true},
 
-		{"S", false},
-		{"s", true},
-		{"P", true},
+		{"S", "test string", false},
+		{"s", "", true},
+		{"P", "", true},
 
-		{"J", false},
-		{"j", true},
-		{"P", true},
+		{"J", "{\"test\": \"string\"}", false},
+		{"j", "", true},
+		{"P", "", true},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.value, func(t *testing.T) {
-			tvd := models.ValueDescriptor{Type: tt.value}
-			_, err := isValidValueDescriptor_private(tvd, models.Event{})
+			tvd := models.ValueDescriptor{Type: tt.tvd}
+			var reading = models.Reading{Value: tt.value}
+			_, err := isValidValueDescriptor(tvd, reading)
 			if err != nil {
 				if !tt.err {
 					t.Errorf("There should not be an error: %v", err)
 				}
 			}
 		})
-
 	}
 }

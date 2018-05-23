@@ -4,18 +4,17 @@
 // SPDX-License-Identifier: Apache-2.0
 //
 
-package notifications
+package notifications_client
 
 import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
+	"strconv"
+	"strings"
 	"testing"
-)
-
-const (
-	NotificationUrlPath = "/api/v1/notification"
 )
 
 // Test common const
@@ -43,8 +42,8 @@ func TestReceiveNotification(t *testing.T) {
 		if r.Method != http.MethodPost {
 			t.Errorf(TestUnexpectedMsgFormatStr, r.Method, http.MethodPost)
 		}
-		if r.URL.EscapedPath() != NotificationUrlPath {
-			t.Errorf(TestUnexpectedMsgFormatStr, r.URL.EscapedPath(), NotificationUrlPath)
+		if r.URL.EscapedPath() != NotificationApiPath {
+			t.Errorf(TestUnexpectedMsgFormatStr, r.URL.EscapedPath(), NotificationApiPath)
 		}
 
 		result, _ := ioutil.ReadAll(r.Body)
@@ -93,10 +92,19 @@ func TestReceiveNotification(t *testing.T) {
 
 	defer ts.Close()
 
-	notificationsClient := NotificationsClient{
-		RemoteUrl:     ts.URL + NotificationUrlPath,
-		OwningService: "scheduler",
+	u, err := url.Parse(ts.URL)
+	if err != nil {
+		t.Error(err.Error())
 	}
+
+	h := strings.Split(u.Host, ":")
+
+	intPort, e := strconv.Atoi(h[1])
+	if e != nil {
+		t.Error(e)
+	}
+
+	SetConfiguration(h[0], intPort)
 
 	notification := Notification{
 		Sender:      TestNotificationSender,
@@ -108,5 +116,5 @@ func TestReceiveNotification(t *testing.T) {
 		Labels:      []string{TestNotificationLabel1, TestNotificationLabel2},
 	}
 
-	notificationsClient.RecieveNotification(notification)
+	GetNotificationsClient().SendNotification(notification)
 }

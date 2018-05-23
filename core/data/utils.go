@@ -10,21 +10,15 @@
  * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
- *
- * @microservice: core-data-go library
- * @author: Ryan Comer, Dell
- * @version: 0.5.0
  *******************************************************************************/
 package data
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
 )
-
 
 // Helper function for encoding things for returning from REST calls
 func encode(i interface{}, w http.ResponseWriter) {
@@ -47,10 +41,10 @@ func printBody(r io.ReadCloser) {
 	bodyString := string(body)
 
 	if err != nil {
-		fmt.Println(err)
+		loggingClient.Error(err.Error())
 	}
 
-	fmt.Println(bodyString)
+	loggingClient.Info(bodyString)
 }
 
 // Test if the service is working

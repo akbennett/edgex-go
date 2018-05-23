@@ -10,10 +10,6 @@
  * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
- *
- * @microservice: core-metadata-go service
- * @author: Spencer Bull & Ryan Comer, Dell
- * @version: 0.5.0
  *******************************************************************************/
 package metadata
 
@@ -25,7 +21,6 @@ import (
 
 // Struct used to pase the JSON configuration file
 type ConfigurationStruct struct {
-	ApplicationName                     string
 	DBType                              string
 	MongoDatabaseName                   string
 	MongoDBUserName                     string
@@ -35,10 +30,9 @@ type ConfigurationStruct struct {
 	MongoDBConnectTimeout               int
 	ReadMaxLimit                        int
 	Protocol                            string
-	ServiceName                         string
 	ServiceAddress                      string
-	ServicePort                          int
-	ServiceTimeout                       int
+	ServicePort                         int
+	ServiceTimeout                      int
 	HeartBeatTime                       int
 	HeartBeatMsg                        string
 	AppOpenMsg                          string
@@ -56,7 +50,8 @@ type ConfigurationStruct struct {
 	NotificationSender                  string
 	NotificationDescription             string
 	NotificationLabel                   string
-	SupportNotificationsNotificationURL string
+	SupportNotificationsHost            string
+	SupportNotificationsPort            int
 	SupportNotificationsSubscriptionURL string
 	SupportNotificationsTransmissionURL string
 }
@@ -74,7 +69,6 @@ var (
 	DBUSER              = "meta"
 	DBPASS              = "password"
 	MONGODATABASE       = "metadata"
-	METADATASERVICENAME = "core-metadata"
 
 	MAX_LIMIT int = 1000
 
@@ -109,6 +103,7 @@ var (
 	ADDRESSABLE              = "addressable"
 	ADDRESSABLENAME          = "addressablename"
 	ADDRESSABLEID            = "addressableid"
+	CHECK					 = "check"
 	SERVICE                  = "service"
 	SERVICENAME              = "servicename"
 	SERVICEID                = "serviceid"

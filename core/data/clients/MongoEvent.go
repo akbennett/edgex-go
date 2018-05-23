@@ -10,15 +10,10 @@
  * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
- *
- * @microservice: core-data-go library
- * @author: Ryan Comer, Dell
- * @version: 0.5.0
  *******************************************************************************/
 package clients
 
 import (
-	"fmt"
 	"github.com/edgexfoundry/edgex-go/core/domain/models"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
@@ -92,7 +87,7 @@ func (me *MongoEvent) SetBSON(raw bson.Raw) error {
 	// De-reference the DBRef fields
 	mc, err := getCurrentMongoClient()
 	if err != nil {
-		fmt.Println("Error getting a mongo client: " + err.Error())
+		loggingClient.Error("Error getting a mongo client: " + err.Error())
 		return err
 	}
 

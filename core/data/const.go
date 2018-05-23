@@ -10,15 +10,10 @@
  * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
- *
- * @microservice: core-data-go library
- * @author: Ryan Comer, Dell
- * @version: 0.5.0
  *******************************************************************************/
 package data
 
 type ConfigurationStruct struct {
-	ApplicationName            string
 	ConsulProfilesActive       string
 	ReadMaxLimit               int
 	MetaDataCheck              bool
@@ -33,7 +28,6 @@ type ConfigurationStruct struct {
 	ServicePort                int
 	ServiceTimeout             int
 	ServiceAddress             string
-	ServiceName                string
 	DeviceUpdateLastConnected  bool
 	ServiceUpdateLastConnected bool
 	MongoDBUserName            string
@@ -52,22 +46,28 @@ type ConfigurationStruct struct {
 	LoggingFile                string
 	LoggingRemoteURL           string
 	MetaAddressableURL         string
+	MetaAddressablePath        string
 	MetaDeviceServiceURL       string
+	MetaDeviceServicePath	   string
 	MetaDeviceProfileURL       string
+	MetaDeviceProfilePath	   string
 	MetaDeviceURL              string
+	MetaDevicePath             string
 	MetaDeviceReportURL        string
+	MetaDeviceReportPath       string
 	MetaCommandURL             string
+	MetaCommandPath            string
 	MetaEventURL               string
+	MetaEventPath              string
 	MetaScheduleURL            string
+	MetaSchedulePath           string
 	MetaProvisionWatcherURL    string
+	MetaProvisionWatcherPath   string
 	MetaPingURL                string
+	MetaPingPath               string
 	ActiveMQBroker             string
 	ZeroMQAddressPort          string
-	AmqBroker                  string
 }
 
 var configuration ConfigurationStruct = ConfigurationStruct{} //  Needs to be initialized before used
 
-var (
-	COREDATASERVICENAME = "core-data"
-)

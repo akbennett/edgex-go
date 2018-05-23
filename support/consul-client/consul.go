@@ -10,10 +10,6 @@
  * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
- *
- * @microservice: consul-client-go library
- * @author: Ryan Comer, Dell
- * @version: 0.5.0
  *******************************************************************************/
 
 package consulclient
@@ -38,6 +34,12 @@ type ConsulConfig struct {
 	CheckInterval  string
 }
 
+type ServiceEndpoint struct {
+	Key string
+	Address string
+	Port int
+}
+
 var consul *consulapi.Client = nil // Call consulInit to initialize this variable
 
 // Initialize consul by connecting to the agent and registering the service/check
@@ -45,7 +47,7 @@ func ConsulInit(config ConsulConfig) error {
 	var err error // Declare error to be used throughout function
 
 	// Connect to the Consul Agent
-	defaultConfig := consulapi.DefaultConfig()
+	defaultConfig := &consulapi.Config{}
 	defaultConfig.Address = config.ConsulAddress + ":" + strconv.Itoa(config.ConsulPort)
 	consul, err = consulapi.NewClient(defaultConfig)
 	if err != nil {
@@ -64,7 +66,7 @@ func ConsulInit(config ConsulConfig) error {
 
 	// Register the Health Check
 	err = consul.Agent().CheckRegister(&consulapi.AgentCheckRegistration{
-		Name:      "Health Check",
+		Name:      "Health Check: " + config.ServiceName,
 		Notes:     "Check the health of the API",
 		ServiceID: config.ServiceName,
 		AgentServiceCheck: consulapi.AgentServiceCheck{
@@ -77,6 +79,23 @@ func ConsulInit(config ConsulConfig) error {
 	}
 
 	return nil
+}
+
+func GetServiceEndpoint(serviceKey string) (ServiceEndpoint, error) {
+	services, err := consul.Agent().Services()
+	if err != nil {
+		return ServiceEndpoint{}, err
+	}
+
+	endpoint := ServiceEndpoint{}
+	for key, service := range services {
+		if key == serviceKey {
+			endpoint.Port = service.Port
+			endpoint.Key = key
+			endpoint.Address = service.Address
+		}
+	}
+	return endpoint, nil
 }
 
 // Look at the key/value pairs to update configuration

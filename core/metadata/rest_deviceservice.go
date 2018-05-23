@@ -10,10 +10,6 @@
  * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
- *
- * @microservice: core-metadata-go service
- * @author: Spencer Bull & Ryan Comer, Dell
- * @version: 0.5.0
  *******************************************************************************/
 package metadata
 
@@ -86,7 +82,7 @@ func restAddDeviceService(w http.ResponseWriter, r *http.Request) {
 	// No ID or Name given for addressable
 	if ds.Service.Addressable.Id.Hex() == "" && ds.Service.Addressable.Name == "" {
 		err = errors.New("Must provide an Addressable for Device Service")
-		http.Error(w, err.Error(), http.StatusConflict)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		loggingClient.Error(err.Error(), "")
 		return
 	}

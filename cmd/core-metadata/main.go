@@ -10,10 +10,6 @@
  * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
- *
- * @microservice: core-metadata-go service
- * @author: Spencer Bull & Ryan Comer, Dell
- * @version: 0.5.0
  *******************************************************************************/
 package main
 
@@ -21,29 +17,38 @@ import (
 	"flag"
 	"fmt"
 	"net/http"
+	"os"
+	"os/signal"
+	"strconv"
+	"syscall"
 	"time"
 
 	"github.com/edgexfoundry/edgex-go"
 	"github.com/edgexfoundry/edgex-go/core/metadata"
-	"github.com/edgexfoundry/edgex-go/pkg/config"
-	"github.com/edgexfoundry/edgex-go/pkg/heartbeat"
-	logger "github.com/edgexfoundry/edgex-go/support/logging-client"
-	"strconv"
+	"github.com/edgexfoundry/edgex-go/internal"
+	"github.com/edgexfoundry/edgex-go/internal/pkg/config"
+	"github.com/edgexfoundry/edgex-go/internal/pkg/heartbeat"
+	"github.com/edgexfoundry/edgex-go/internal/pkg/usage"
+	"github.com/edgexfoundry/edgex-go/support/logging-client"
 )
 
 var loggingClient logger.LoggingClient
 
 func main() {
 	start := time.Now()
-	var (
-		useConsul = flag.String("consul", "", "Should the service use consul?")
-		useProfile = flag.String("profile", "default", "Specify a profile other than default.")
-	)
+	var useConsul bool
+	var useProfile string
+
+	flag.BoolVar(&useConsul, "consul", false, "Indicates the service should use consul.")
+	flag.BoolVar(&useConsul, "c", false, "Indicates the service should use consul.")
+	flag.StringVar(&useProfile, "profile", "", "Specify a profile other than default.")
+	flag.StringVar(&useProfile, "p", "", "Specify a profile other than default.")
+	flag.Usage = usage.HelpCallback
 	flag.Parse()
 
 	//Read Configuration
 	configuration := &metadata.ConfigurationStruct{}
-	err := config.LoadFromFile(*useProfile, configuration)
+	err := config.LoadFromFile(useProfile, configuration)
 	if err != nil {
 		logBeforeTermination(err)
 		return
@@ -51,7 +56,7 @@ func main() {
 
 	//Determine if configuration should be overridden from Consul
 	var consulMsg string
-	if *useConsul == "y" {
+	if useConsul {
 		consulMsg = "Loading configuration from Consul..."
 		err := metadata.ConnectToConsul(*configuration)
 		if err != nil {
@@ -64,10 +69,10 @@ func main() {
 
 	// Setup Logging
 	logTarget := setLoggingTarget(*configuration)
-	loggingClient = logger.NewClient(configuration.ApplicationName, configuration.EnableRemoteLogging, logTarget)
+	loggingClient = logger.NewClient(internal.CoreMetaDataServiceKey, configuration.EnableRemoteLogging, logTarget)
 
 	loggingClient.Info(consulMsg)
-	loggingClient.Info(fmt.Sprintf("Starting %s %s ", metadata.METADATASERVICENAME, edgex.Version))
+	loggingClient.Info(fmt.Sprintf("Starting %s %s ", internal.CoreMetaDataServiceKey, edgex.Version))
 
 	err = metadata.Init(*configuration, loggingClient)
 	if err != nil {
@@ -75,23 +80,27 @@ func main() {
 		return
 	}
 
-	r := metadata.LoadRestRoutes()
 	http.TimeoutHandler(nil, time.Millisecond*time.Duration(configuration.ServiceTimeout), "Request timed out")
 	loggingClient.Info(configuration.AppOpenMsg, "")
 
 	heartbeat.Start(configuration.HeartBeatMsg, configuration.HeartBeatTime, loggingClient)
 
+	errs := make(chan error, 2)
+	listenForInterrupt(errs)
+	startHttpServer(errs, configuration.ServicePort)
+
 	// Time it took to start service
 	loggingClient.Info("Service started in: "+time.Since(start).String(), "")
-	fmt.Println("Listening on port: " + strconv.Itoa(configuration.ServicePort))
-	loggingClient.Error(http.ListenAndServe(":"+strconv.Itoa(configuration.ServicePort), r).Error())
+	loggingClient.Info("Listening on port: " + strconv.Itoa(configuration.ServicePort))
+	c := <-errs
+	metadata.Destruct()
+	loggingClient.Warn(fmt.Sprintf("terminating: %v", c))
 }
 
 func logBeforeTermination(err error) {
-	loggingClient = logger.NewClient(metadata.METADATASERVICENAME, false, "")
+	loggingClient = logger.NewClient(internal.CoreMetaDataServiceKey, false, "")
 	loggingClient.Error(err.Error())
 }
-
 
 func setLoggingTarget(conf metadata.ConfigurationStruct) string {
 	logTarget := conf.LoggingRemoteURL
@@ -99,4 +108,19 @@ func setLoggingTarget(conf metadata.ConfigurationStruct) string {
 		return conf.LoggingFile
 	}
 	return logTarget
+}
+
+func listenForInterrupt(errChan chan error) {
+	go func() {
+		c := make(chan os.Signal)
+		signal.Notify(c, syscall.SIGINT)
+		errChan <- fmt.Errorf("%s", <-c)
+	}()
+}
+
+func startHttpServer(errChan chan error, port int) {
+	go func() {
+		r := metadata.LoadRestRoutes()
+		errChan <- http.ListenAndServe(":"+strconv.Itoa(port), r)
+	}()
 }
