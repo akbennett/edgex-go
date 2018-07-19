@@ -2,6 +2,7 @@
 // Copyright (c) 2017
 // Cavium
 // Mainflux
+// IOTech
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -9,13 +10,13 @@
 package distro
 
 import (
-	"github.com/edgexfoundry/edgex-go/core/domain/models"
 	export "github.com/edgexfoundry/edgex-go/export"
+	"github.com/edgexfoundry/edgex-go/pkg/models"
 )
 
 // Sender - Send interface
 type Sender interface {
-	Send(data []byte)
+	Send(data []byte, event *models.Event)
 }
 
 // Formatter - Format interface

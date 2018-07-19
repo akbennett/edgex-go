@@ -10,10 +10,11 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"reflect"
+	"strconv"
 	"strings"
 	"testing"
 
-	"github.com/edgexfoundry/edgex-go/core/domain/models"
+	"github.com/edgexfoundry/edgex-go/pkg/models"
 )
 
 const (
@@ -74,5 +75,22 @@ func TestThingsBoardJson(t *testing.T) {
 	s := string(out[:])
 	if strings.HasPrefix(s, "{\""+devID1+"\":[{\"ts\":") == false {
 		t.Fatalf("Invalid ThingsBoard JSON format: %v", s)
+	}
+}
+
+func TestNoop(t *testing.T) {
+	eventIn := models.Event{
+		Device: devID1,
+	}
+
+	xf := noopFormatter{}
+	out := xf.Format(&eventIn)
+
+	if out == nil {
+		t.Fatal("out should not be nil")
+	}
+
+	if len(out) != 0 {
+		t.Fatal("Formmated array length is not zero, length = " + strconv.Itoa(len(out)))
 	}
 }

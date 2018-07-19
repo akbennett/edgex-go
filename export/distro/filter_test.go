@@ -9,8 +9,8 @@ package distro
 import (
 	"testing"
 
-	"github.com/edgexfoundry/edgex-go/core/domain/models"
 	"github.com/edgexfoundry/edgex-go/export"
+	"github.com/edgexfoundry/edgex-go/pkg/models"
 	"go.uber.org/zap"
 )
 
@@ -40,11 +40,11 @@ func TestFilterDevice(t *testing.T) {
 	}
 
 	filter := newDevIdFilter(f)
-	accepted, res := filter.Filter(nil)
+	accepted, _ := filter.Filter(nil)
 	if accepted {
 		t.Fatal("Event should be filtered out")
 	}
-	accepted, res = filter.Filter(&eventDev1)
+	accepted, res := filter.Filter(&eventDev1)
 	if !accepted {
 		t.Fatal("Event should be accepted")
 	}

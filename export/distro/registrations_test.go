@@ -7,8 +7,8 @@
 package distro
 
 import (
-	"github.com/edgexfoundry/edgex-go/core/domain/models"
 	"github.com/edgexfoundry/edgex-go/export"
+	"github.com/edgexfoundry/edgex-go/pkg/models"
 	"go.uber.org/zap"
 
 	// "go.uber.org/zap"
@@ -71,7 +71,7 @@ type dummyStruct struct {
 	lastSize int
 }
 
-func (sender *dummyStruct) Send(data []byte) {
+func (sender *dummyStruct) Send(data []byte, event *models.Event) {
 	sender.count += 1
 	sender.lastSize = len(data)
 }

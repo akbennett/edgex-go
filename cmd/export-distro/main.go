@@ -16,11 +16,11 @@ import (
 	"syscall"
 
 	"github.com/edgexfoundry/edgex-go"
-	"github.com/edgexfoundry/edgex-go/core/domain/models"
 	"github.com/edgexfoundry/edgex-go/export/distro"
 	"github.com/edgexfoundry/edgex-go/internal"
 	"github.com/edgexfoundry/edgex-go/internal/pkg/config"
 	"github.com/edgexfoundry/edgex-go/internal/pkg/usage"
+	"github.com/edgexfoundry/edgex-go/pkg/models"
 
 	"go.uber.org/zap"
 )
@@ -31,7 +31,7 @@ func main() {
 	logger, _ = zap.NewProduction()
 	defer logger.Sync()
 
-	logger.Info("Starting " + internal.ExportDistroServiceKey, zap.String("version", edgex.Version))
+	logger.Info("Starting "+internal.ExportDistroServiceKey, zap.String("version", edgex.Version))
 
 	var (
 		useConsul  bool

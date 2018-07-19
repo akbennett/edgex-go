@@ -2,6 +2,7 @@
 // Copyright (c) 2017
 // Cavium
 // Mainflux
+// IOTech
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -19,7 +20,7 @@ import (
 
 	export "github.com/edgexfoundry/edgex-go/export"
 
-	"github.com/edgexfoundry/edgex-go/core/domain/models"
+	"github.com/edgexfoundry/edgex-go/pkg/models"
 
 	"go.uber.org/zap"
 )
@@ -51,13 +52,15 @@ func (reg *registrationInfo) update(newReg export.Registration) bool {
 	case export.FormatSerialized:
 		// TODO reg.format = distro.NewSerializedFormat()
 	case export.FormatIoTCoreJSON:
-		// TODO reg.format = distro.NewIotCoreFormat()
+		reg.format = jsonFormatter{}
 	case export.FormatAzureJSON:
-		// TODO reg.format = distro.NewAzureFormat()
+		reg.format = azureFormatter{}
 	case export.FormatCSV:
 		// TODO reg.format = distro.NewCsvFormat()
 	case export.FormatThingsBoardJSON:
 		reg.format = thingsboardJSONFormatter{}
+	case export.FormatNOOP:
+		reg.format = noopFormatter{}
 	default:
 		logger.Warn("Format not supported: ", zap.String("format", newReg.Format))
 		return false
@@ -78,16 +81,19 @@ func (reg *registrationInfo) update(newReg export.Registration) bool {
 
 	reg.sender = nil
 	switch newReg.Destination {
-	case export.DestMQTT:
+	case export.DestMQTT, export.DestAzureMQTT:
 		reg.sender = NewMqttSender(newReg.Addressable)
 	case export.DestZMQ:
 		logger.Info("Destination ZMQ is not supported")
 	case export.DestIotCoreMQTT:
-		// TODO reg.sender = distro.NewIotCoreSender("TODO URL")
-	case export.DestAzureMQTT:
-		// TODO reg.sender = distro.NewAzureSender("TODO URL")
+		reg.sender = NewIoTCoreSender(newReg.Addressable)
 	case export.DestRest:
 		reg.sender = NewHTTPSender(newReg.Addressable)
+	case export.DestXMPP:
+		reg.sender = NewXMPPSender(newReg.Addressable)
+	case export.DestInfluxDB:
+		reg.sender = NewInfluxDBSender(newReg.Addressable)
+
 	default:
 		logger.Warn("Destination not supported: ", zap.String("destination", newReg.Destination))
 		return false
@@ -151,7 +157,7 @@ func (reg registrationInfo) processEvent(event *models.Event) {
 		encrypted = reg.encrypt.Transform(compressed)
 	}
 
-	reg.sender.Send(encrypted)
+	reg.sender.Send(encrypted, event)
 	logger.Debug("Sent event with registration:",
 		zap.Any("Event", event),
 		zap.String("Name", reg.registration.Name))

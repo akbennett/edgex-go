@@ -13,16 +13,16 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
 
 	"github.com/edgexfoundry/edgex-go"
 	"github.com/edgexfoundry/edgex-go/internal"
 	"github.com/edgexfoundry/edgex-go/internal/pkg/config"
-	"github.com/edgexfoundry/edgex-go/internal/pkg/heartbeat"
 	"github.com/edgexfoundry/edgex-go/internal/pkg/usage"
-	"github.com/edgexfoundry/edgex-go/support/logging"
-	"github.com/edgexfoundry/edgex-go/support/logging-client"
+	"github.com/edgexfoundry/edgex-go/internal/support/logging"
+	"github.com/edgexfoundry/edgex-go/pkg/clients/logging"
 )
 
 var loggingClient logger.LoggingClient
@@ -64,7 +64,6 @@ func main() {
 	loggingClient.Info(fmt.Sprintf("Starting %s %s", internal.SupportLoggingServiceKey, edgex.Version))
 
 	logging.Init(*configuration)
-	heartbeat.Start(configuration.HeartBeatMsg, configuration.HeartBeatTime, loggingClient)
 
 	errs := make(chan error, 2)
 
@@ -76,6 +75,7 @@ func main() {
 
 	// Time it took to start service
 	loggingClient.Info("Service started in: "+time.Since(start).String(), "")
+	loggingClient.Info("Listening on port: "+strconv.Itoa(configuration.Port), "")
 	logging.StartHTTPServer(errs)
 
 	c := <-errs
